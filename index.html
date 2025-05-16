@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Return Request Form | MRdians</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #dbeafe, #f0f9ff);
+      padding: 20px;
+    }
+    .form-container {
+      background: #ffffff;
+      padding: 25px;
+      max-width: 700px;
+      margin: auto;
+      border-radius: 10px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+      border-top: 6px solid #007bff;
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #f8f9fa;
+    }
+    input[type="file"] {
+      background: none;
+    }
+    button {
+      padding: 12px 25px;
+      background-color: #0069d9;
+      color: white;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background-color: #0053ba;
+    }
+    .hidden {
+      display: none;
+    }
+    .error {
+      color: red;
+      font-size: 0.9em;
+    }
+    .preview-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .preview-image {
+      position: relative;
+    }
+    .preview-image img {
+      height: 80px;
+      border: 2px solid #007bff;
+      border-radius: 4px;
+    }
+    .remove-btn {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: red;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <h2>Return Request Form</h2>
+    <form id="returnForm">
+      <div class="form-group">
+        <label for="orderId">Order ID</label>
+        <input type="text" id="orderId" name="orderId" required />
+      </div>
+      <div class="form-group">
+        <label for="orderDate">Order Date</label>
+        <input type="date" id="orderDate" name="orderDate" required min="2025-03-11" max="9999-12-31" />
+      </div>
+      <div class="form-group">
+        <label for="phone">Phone Number</label>
+        <input type="tel" id="phone" name="phone" required />
+      </div>
+      <div class="form-group">
+        <label for="reason">Reason for Return</label>
+        <select id="reason" name="reason" required onchange="showNext()">
+          <option value="">-- Select a Reason --</option>
+          <option value="Damaged Item">Damaged Item</option>
+          <option value="Wrong Product Received">Wrong Product Received</option>
+          <option value="Missing Accessories">Missing Accessories</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+
+      <div id="detailsBlock" class="hidden">
+        <div class="form-group">
+          <label for="description">Describe the Issue</label>
+          <textarea id="description" name="description" rows="4" required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="shippingLabel">Image of Shipping Label (1 image only)</label>
+          <input type="file" id="shippingLabel" name="shippingLabel" accept="image/*" required />
+        </div>
+
+        <div class="form-group">
+          <label for="productImages">Image of Product You Received (Exactly 4 images required)</label>
+          <input type="file" id="productImages" accept="image/*" multiple required />
+          <div id="imagePreview" class="preview-container"></div>
+          <div class="error" id="productImagesError"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="serialImage">Serial Number of Item (1 image only)</label>
+          <input type="file" id="serialImage" name="serialImage" accept="image/*" required />
+        </div>
+
+        <div class="form-group">
+          <label for="unboxingVideo">Video of Unboxing (Optional)</label>
+          <input type="file" id="unboxingVideo" name="unboxingVideo" accept="video/*" />
+        </div>
+
+        <button type="submit">Submit Request</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    function showNext() {
+      const reason = document.getElementById('reason').value;
+      const detailsBlock = document.getElementById('detailsBlock');
+      detailsBlock.classList.toggle('hidden', reason === '');
+    }
+
+    const imageInput = document.getElementById('productImages');
+    const previewContainer = document.getElementById('imagePreview');
+    let filesArray = [];
+
+    imageInput.addEventListener('change', (e) => {
+      const newFiles = Array.from(e.target.files);
+      if (filesArray.length + newFiles.length > 4) {
+        alert('Only 4 images allowed.');
+        return;
+      }
+      newFiles.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          const div = document.createElement('div');
+          div.className = 'preview-image';
+          div.innerHTML = `
+            <img src="${event.target.result}" alt="Image Preview">
+            <button type="button" class="remove-btn" onclick="removeImage(this)">&times;</button>
+          `;
+          previewContainer.appendChild(div);
+        }
+        reader.readAsDataURL(file);
+        filesArray.push(file);
+      });
+    });
+
+    function removeImage(btn) {
+      const div = btn.parentElement;
+      const index = Array.from(previewContainer.children).indexOf(div);
+      filesArray.splice(index, 1);
+      previewContainer.removeChild(div);
+    }
+
+    document.getElementById('returnForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const productImagesError = document.getElementById('productImagesError');
+      if (filesArray.length !== 4) {
+        productImagesError.textContent = 'Please upload exactly 4 product images.';
+        return;
+      } else {
+        productImagesError.textContent = '';
+      }
+
+      const trackingId = 'TRK' + Math.floor(Math.random() * 900000 + 100000);
+      const formData = new FormData();
+      formData.append('orderId', document.getElementById('orderId').value);
+      formData.append('orderDate', document.getElementById('orderDate').value);
+      formData.append('phone', document.getElementById('phone').value);
+      formData.append('reason', document.getElementById('reason').value);
+      formData.append('description', document.getElementById('description').value);
+      formData.append('trackingId', trackingId);
+      formData.append('shippingLabel', document.getElementById('shippingLabel').files[0]);
+      formData.append('serialImage', document.getElementById('serialImage').files[0]);
+      if (document.getElementById('unboxingVideo').files[0]) {
+        formData.append('unboxingVideo', document.getElementById('unboxingVideo').files[0]);
+      }
+      filesArray.forEach((file, index) => {
+        formData.append(`productImage${index+1}`, file);
+      });
+
+      try {
+        const response = await fetch('PASTE_YOUR_GOOGLE_SCRIPT_WEB_APP_URL_HERE', {
+          method: 'POST',
+          body: formData
+        });
+        const result = await response.text();
+        if (result === 'SUCCESS') {
+          alert(`Form submitted successfully!\nTracking ID: ${trackingId}`);
+          document.getElementById('returnForm').reset();
+          previewContainer.innerHTML = '';
+          filesArray = [];
+          showNext();
+        } else {
+          alert('Failed to submit the form. Please try again.');
+        }
+      } catch (error) {
+        alert('Error while submitting the form.');
+      }
+    });
+  </script>
+</body>
+</html>
